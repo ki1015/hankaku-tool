@@ -11,6 +11,7 @@
     --text: #1c2432;
     --muted: #6b7688;
     --ok: #17a06a;
+    --soft: #eef2fb;
   }
   * { box-sizing: border-box; }
   body {
@@ -27,7 +28,7 @@
   }
   header {
     text-align: center;
-    margin-bottom: 28px;
+    margin-bottom: 22px;
   }
   h1 {
     font-size: 1.6rem;
@@ -38,6 +39,129 @@
     color: var(--muted);
     font-size: 0.95rem;
   }
+
+  /* 開閉式パネル（使い方・設定）共通 */
+  details.box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  details.box > summary {
+    cursor: pointer;
+    padding: 14px 18px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+  details.box > summary::-webkit-details-marker { display: none; }
+  details.box > summary::before {
+    content: "▶";
+    font-size: 0.7rem;
+    color: var(--accent);
+    transition: transform 0.15s;
+  }
+  details.box[open] > summary::before { transform: rotate(90deg); }
+  details.box > summary:hover { background: var(--soft); }
+  .box-inner {
+    padding: 4px 18px 18px;
+  }
+
+  /* 使い方ガイド */
+  .steps {
+    list-style: none;
+    margin: 6px 0 12px;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .steps li {
+    flex: 1 1 200px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--soft);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.9rem;
+  }
+  .step-num {
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .example {
+    margin: 4px 0 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .example code {
+    background: var(--soft);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+  .example .arrow { margin: 0 8px; color: var(--accent); font-weight: 700; }
+
+  /* 設定パネル */
+  .setting-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .setting {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .setting:hover { background: var(--soft); }
+  .setting > input {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: var(--accent);
+  }
+  .setting-body { display: flex; flex-direction: column; }
+  .setting-title { font-weight: 600; font-size: 0.92rem; }
+  .setting-desc { color: var(--muted); font-size: 0.82rem; margin-top: 2px; }
+  .setting.sub { margin-left: 28px; }
+  .setting.sub .setting-title { font-weight: 500; }
+  /* 親（改行）がOFFのとき、会話文除外を無効表示にする */
+  .setting.disabled { opacity: 0.45; cursor: default; }
+  .setting.disabled:hover { background: none; }
+  .badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 0 5px;
+    margin-left: 6px;
+    vertical-align: 1px;
+  }
+
+  /* 入力・出力 */
   .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -62,13 +186,10 @@
     margin-bottom: 10px;
     min-height: 34px;
   }
-  .panel-head .label {
-    font-weight: 600;
-    font-size: 0.95rem;
-  }
+  .panel-head .label { font-weight: 600; font-size: 0.95rem; }
   textarea {
     width: 100%;
-    min-height: 320px;
+    min-height: 300px;
     resize: vertical;
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -80,14 +201,10 @@
     background: #fbfcfe;
     outline: none;
   }
-  textarea:focus {
-    border-color: var(--accent);
-    background: #fff;
-  }
-  /* 出力枠（色付き表示ができるように textarea ではなく div にしている） */
+  textarea:focus { border-color: var(--accent); background: #fff; }
   .output-box {
     width: 100%;
-    min-height: 320px;
+    min-height: 300px;
     max-height: 600px;
     overflow-y: auto;
     border: 1px solid var(--border);
@@ -97,15 +214,13 @@
     line-height: 1.7;
     color: var(--text);
     background: #f7f9fc;
-    white-space: pre-wrap;   /* 改行と空白をそのまま表示 */
+    white-space: pre-wrap;
     word-break: break-word;
   }
-  /* 何も表示されていないときの案内文 */
   .output-box:empty::before {
     content: attr(data-placeholder);
     color: var(--muted);
   }
-  /* 全角→半角に変換した文字のハイライト */
   .hit {
     background: #ffe08a;
     border-radius: 3px;
@@ -122,17 +237,10 @@
     padding: 7px 16px;
     transition: background 0.15s, color 0.15s;
   }
-  .btn-copy {
-    background: var(--accent);
-    color: #fff;
-  }
+  .btn-copy { background: var(--accent); color: #fff; }
   .btn-copy:hover { background: var(--accent-hover); }
   .btn-copy.copied { background: var(--ok); }
-  .btn-clear {
-    background: transparent;
-    color: var(--muted);
-    padding: 7px 10px;
-  }
+  .btn-clear { background: transparent; color: var(--muted); padding: 7px 10px; }
   .btn-clear:hover { color: var(--text); }
   .stats {
     text-align: center;
@@ -142,43 +250,77 @@
     min-height: 1.4em;
   }
   .stats b { color: var(--accent); }
-
-  /* 出力枠ヘッダーの右側（改行オプション＋コピーボタン） */
-  .head-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .opt-inline {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.82rem;
-    color: var(--muted);
-    cursor: pointer;
-    user-select: none;
-    white-space: nowrap;
-  }
-  .opt-inline input {
-    width: 15px;
-    height: 15px;
-    cursor: pointer;
-    accent-color: var(--accent);
-  }
   footer {
     text-align: center;
-    margin-top: 40px;
+    margin-top: 34px;
     color: var(--muted);
     font-size: 0.8rem;
   }
-
 </style>
 
 <div class="wrap">
   <header>
     <h1>全角 → 半角 変換ツール</h1>
-    <p>文章を貼り付けると、全角の数字・アルファベットを自動で半角に直します</p>
+    <p>全角の数字・アルファベットを、半角に直します</p>
   </header>
+
+  <!-- 使い方ガイド（初めての方向け） -->
+  <details class="box" open>
+    <summary>はじめての方へ ── 使い方</summary>
+    <div class="box-inner">
+      <ol class="steps">
+        <li><span class="step-num">1</span>左の枠に文章を貼り付ける</li>
+        <li><span class="step-num">2</span>右の枠に半角化した文章が自動で出る</li>
+        <li><span class="step-num">3</span>「コピー」ボタンで結果をコピー</li>
+      </ol>
+      <p class="example">
+        例： <code>ＡＢＣ１２３</code> <span class="arrow">→</span> <code>ABC123</code>
+        <span style="margin-left:6px">（全角の英数字だけが半角になります。日本語や記号はそのまま）</span>
+      </p>
+    </div>
+  </details>
+
+  <!-- 設定パネル（機能のオン・オフ。設定はこのブラウザに保存されます） -->
+  <details class="box" open>
+    <summary>設定 ── 機能のオン・オフ（このPCに保存されます）</summary>
+    <div class="box-inner">
+      <div class="setting-list">
+
+        <label class="setting" id="row-optLineBreak">
+          <input type="checkbox" id="optLineBreak">
+          <span class="setting-body">
+            <span class="setting-title">「。」で段落を分ける</span>
+            <span class="setting-desc">「。」ごとに1行あけて改行し、読みやすくします。例：<code>文A。文B。</code> → 文Aと文Bを段落で分けて表示</span>
+          </span>
+        </label>
+
+        <label class="setting sub" id="row-optExcludeKaigi">
+          <input type="checkbox" id="optExcludeKaigi">
+          <span class="setting-body">
+            <span class="setting-title">会話文「」の中は改行しない</span>
+            <span class="setting-desc">例：<code>「行きます。すぐ戻ります。」</code> の中の「。」では改行しません（上の設定がONのときだけ働きます）</span>
+          </span>
+        </label>
+
+        <label class="setting" id="row-optAutoCopy">
+          <input type="checkbox" id="optAutoCopy">
+          <span class="setting-body">
+            <span class="setting-title">貼り付けたら自動でコピー</span>
+            <span class="setting-desc">文章を貼り付けると、変換してそのままクリップボードにコピー済みになります。あとは貼り付けたい場所で Ctrl+V するだけ</span>
+          </span>
+        </label>
+
+        <label class="setting" id="row-optClickFlow">
+          <input type="checkbox" id="optClickFlow">
+          <span class="setting-body">
+            <span class="setting-title">入力欄クリックで丸ごと入れ替え<span class="badge">上級</span></span>
+            <span class="setting-desc">入力欄をクリックすると、中身を消して → クリップボードの内容を取り込み → 変換 → コピーまで自動で行います。※クリックで中身が消えます。Chrome / Edge 向け（Firefox では取り込みは動きません）</span>
+          </span>
+        </label>
+
+      </div>
+    </div>
+  </details>
 
   <div class="grid">
     <!-- 入力 -->
@@ -194,13 +336,7 @@
     <div class="panel">
       <div class="panel-head">
         <span class="label">出力（半角に変換）</span>
-        <div class="head-right">
-          <label class="opt-inline">
-            <input type="checkbox" id="breakToggle" checked>
-            「。」で改行
-          </label>
-          <button class="btn-copy" id="copyBtn">コピー</button>
-        </div>
+        <button class="btn-copy" id="copyBtn">コピー</button>
       </div>
       <div id="output" class="output-box" data-placeholder="ここに変換後の文章が表示されます"></div>
     </div>
@@ -214,24 +350,61 @@
 </div>
 
 <script>
+  /* ===== 要素の取得 ===== */
   const input   = document.getElementById('input');
   const output  = document.getElementById('output');
   const copyBtn = document.getElementById('copyBtn');
   const clearBtn = document.getElementById('clearBtn');
   const stats   = document.getElementById('stats');
-  const breakToggle = document.getElementById('breakToggle');
 
+  /* ===== 設定（オン・オフ）とその保存 ===== */
+  // 各機能のオン・オフ設定。localStorage に保存して、次回開いたときも保持する。
+  // 保存するのはこのオン・オフ設定だけで、入力した文章は保存しない。
+  const SETTINGS_KEY = 'hankaku-tool-settings';
+
+  // 設定の初期値（保存がまだ無い人に適用される既定値）
+  const DEFAULTS = {
+    lineBreak: true,        // 「。」で段落を分ける
+    excludeKaigi: true,     // 会話文「」の中は改行しない
+    autoCopyOnPaste: true,  // 貼り付けたら自動でコピー
+    clickFlow: false        // 入力欄クリックで丸ごと入れ替え（初期はOFF）
+  };
+
+  // 設定キーと、対応するチェックボックスのID
+  const OPTIONS = [
+    { key: 'lineBreak',       id: 'optLineBreak' },
+    { key: 'excludeKaigi',    id: 'optExcludeKaigi' },
+    { key: 'autoCopyOnPaste', id: 'optAutoCopy' },
+    { key: 'clickFlow',       id: 'optClickFlow' }
+  ];
+
+  function loadSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+      return Object.assign({}, DEFAULTS, saved || {});
+    } catch (e) {
+      return Object.assign({}, DEFAULTS);
+    }
+  }
+  function saveSettings() {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(opts));
+    } catch (e) {
+      /* 保存できない環境（プライベートモード等）でも動作は続ける */
+    }
+  }
+
+  const opts = loadSettings();
+
+  /* ===== 全角→半角の変換とハイライト表示 ===== */
   const FW = /[Ａ-Ｚａ-ｚ０-９]/;   // 全角の英数字（1文字）を判定する
+  let currentOutput = '';           // コピー用の、色なしプレーンテキスト
 
-  // コピー用に、色なしのプレーンな変換結果を保持しておく
-  let currentOutput = '';
-
-  // 出力枠を組み立てる。
-  // 全角の英数字は半角に変換したうえで <span class="hit"> で囲んでハイライトし、
-  // それ以外の文字（日本語・記号・改行など）はそのまま表示する。
+  // 出力枠を組み立てる。全角の英数字は半角に変換して <span class="hit"> で囲み、
+  // それ以外（日本語・記号・改行）はそのまま表示する。
   // 全角文字は半角文字よりコードポイントが 0xFEE0 だけ大きいので、その分を引く。
   function render(src) {
-    output.textContent = '';   // いったん中身を空にする
+    output.textContent = '';
     let plain = '';
     for (const ch of src) {
       if (FW.test(ch)) {
@@ -246,53 +419,48 @@
         plain += ch;
       }
     }
-    return plain;   // 色なしのプレーンテキスト（コピー用）
+    return plain;
   }
 
-  // 変換対象になった文字数を数える
   function countTargets(str) {
     const m = str.match(/[Ａ-Ｚａ-ｚ０-９]/g);
     return m ? m.length : 0;
   }
 
-  // 「。」ごとに改行して1行あける（オプションがONのときだけ実行）。
-  // ただし「」の会話文の中にある「。」は、読みやすさを損なうので改行の対象にしない。
-  // カギ括弧の開き「でネストを深くし、閉じ」で戻す。ネストの外にある「。」だけ段落を分ける。
-  function applyLineBreak(text) {
+  // 「。」ごとに改行して1行あける。excludeKaigi が true のときは、
+  // 「」の会話文の中にある「。」は改行の対象にしない。
+  function applyLineBreak(text, excludeKaigi) {
     let result = '';
     let depth = 0;      // 「」のネストの深さ（>0 なら会話文の中）
     let skipWs = false; // 段落を分けた直後の空白・改行を吸収するフラグ
     for (const ch of text) {
-      // 「。」で改行を入れた直後に続く空白・改行は、重複を避けるため読み飛ばす
       if (skipWs) {
         if (ch === ' ' || ch === '\t' || ch === '　' || ch === '\n' || ch === '\r') {
           continue;
         }
         skipWs = false;
       }
-      if (ch === '「') {
+      if (excludeKaigi && ch === '「') {
         depth++;
         result += ch;
-      } else if (ch === '」') {
+      } else if (excludeKaigi && ch === '」') {
         if (depth > 0) depth--;
         result += ch;
       } else if (ch === '。' && depth === 0) {
-        // 会話文の外の「。」→ ここで段落を分ける（改行して1行あける）
         result += '。\n\n';
         skipWs = true;
       } else {
-        // 会話文の中の「。」もここに来る（そのまま維持して改行しない）
         result += ch;
       }
     }
-    return result.replace(/\n+$/, ''); // 末尾の余分な空行は消す
+    return result.replace(/\n+$/, '');
   }
 
-  // 入力が変わるたびに自動で変換
+  /* ===== 変換の実行（入力が変わるたびに呼ばれる） ===== */
   function update() {
     const src = input.value;
-    // オプションがONなら「。」ごとに段落分けしてから変換する
-    const processed = breakToggle.checked ? applyLineBreak(src) : src;
+    // 設定に応じて「。」の段落分けを適用してから変換する
+    const processed = opts.lineBreak ? applyLineBreak(src, opts.excludeKaigi) : src;
     currentOutput = render(processed);
 
     const n = countTargets(src);
@@ -311,27 +479,25 @@
     copyBtn.textContent = 'コピー';
   }
 
-  // 変換結果をクリップボードへ自動コピーする（貼り付け時に使用）。
-  // ブラウザのセキュリティ制約で失敗することもあるため、その場合は静かに諦める
-  // （手動のコピーボタンはそのまま使えるので実用上は問題ない）。
+  // 変換結果をクリップボードへ自動コピーする。ブラウザの制約で失敗することも
+  // あるため、その場合は静かに諦める（手動のコピーボタンは使える）。
   async function autoCopy() {
     if (!currentOutput) return;
     try {
       await navigator.clipboard.writeText(currentOutput);
       copyBtn.classList.add('copied');
-      copyBtn.textContent = 'コピー済み';   // コピー保持状態を表示
+      copyBtn.textContent = 'コピー済み';
     } catch (e) {
       /* 自動コピーが許可されない環境では何もしない */
     }
   }
 
-  // コピー処理
+  /* ===== コピーボタン（手動） ===== */
   copyBtn.addEventListener('click', async function () {
     if (!currentOutput) return;
     try {
       await navigator.clipboard.writeText(currentOutput);
     } catch (e) {
-      // clipboard API が使えない環境（file:// の古いブラウザ等）へのフォールバック
       const tmp = document.createElement('textarea');
       tmp.value = currentOutput;
       document.body.appendChild(tmp);
@@ -344,47 +510,61 @@
     setTimeout(resetCopyLabel, 1500);
   });
 
+  /* ===== クリア ===== */
   clearBtn.addEventListener('click', function () {
     input.value = '';
     input.focus();
     update();
   });
 
-  // 直前の入力が「貼り付け」だったかを覚えておく（貼り付け時は自動コピーまで行う）
+  /* ===== 貼り付け → （設定ONなら）自動コピー ===== */
   let pastedNow = false;
   input.addEventListener('paste', function () {
     pastedNow = true;
   });
-
-  // 貼り付け・入力・IME確定など、あらゆる変更に反応して変換する
   input.addEventListener('input', function () {
     update();
-    // 貼り付け直後なら、変換結果を自動でクリップボードにコピーする
-    // （このハンドラはユーザー操作由来なので、コピーが許可されやすい）
     if (pastedNow) {
       pastedNow = false;
-      autoCopy();
+      if (opts.autoCopyOnPaste) autoCopy();
     }
   });
 
-  // 入力枠をクリックしたときの一括処理（ご要望のワークフロー）。
-  // 文字が入った状態でクリックすると：中身を消す → クリップボードの内容を取り込む
-  //  → 変換する → 結果を自動でクリップボードにコピーする。
-  // ※クリップボードの「読み取り」はブラウザの許可が必要で、Firefox 等では
-  //   動かないことがある（その場合はクリアのみになる）。
+  /* ===== 入力欄クリックで丸ごと入れ替え（設定ONのときだけ） ===== */
   input.addEventListener('click', async function () {
-    if (input.value === '') return;   // 空クリックは通常どおり（何もしない）
-    input.value = '';                 // 1. まず中身を消す
+    if (!opts.clickFlow) return;      // 設定OFFなら通常のクリックとして扱う
+    if (input.value === '') return;   // 空クリックは何もしない
+    input.value = '';                 // 1. 中身を消す
     try {
-      const clip = await navigator.clipboard.readText();  // 2. クリップボードを読み取る
+      const clip = await navigator.clipboard.readText();  // 2. クリップボードを取り込む
       if (clip) input.value = clip;
     } catch (e) {
-      /* 読み取りが許可されない環境ではクリアのみで終わる */
+      /* 読み取りが許可されない環境（Firefox 等）ではクリアのみ */
     }
-    update();                         // 3. 変換して
-    autoCopy();                       //    結果を自動でクリップボードにコピー
+    update();                         // 3. 変換
+    autoCopy();                       // 4. 結果を自動コピー
   });
 
-  // オプションのON/OFFを切り替えたら、その場で反映する
-  breakToggle.addEventListener('change', update);
+  /* ===== 設定UIの初期化（保存値をチェックボックスへ反映＋変更を保存） ===== */
+  // 会話文除外は「段落を分ける」がONのときだけ意味を持つので、OFF時は無効表示にする
+  function syncKaigiEnabled() {
+    const el = document.getElementById('optExcludeKaigi');
+    const row = document.getElementById('row-optExcludeKaigi');
+    el.disabled = !opts.lineBreak;
+    row.classList.toggle('disabled', !opts.lineBreak);
+  }
+
+  OPTIONS.forEach(function (o) {
+    const el = document.getElementById(o.id);
+    el.checked = opts[o.key];   // 保存された設定を反映
+    el.addEventListener('change', function () {
+      opts[o.key] = el.checked;
+      saveSettings();
+      if (o.key === 'lineBreak') syncKaigiEnabled();
+      update();
+    });
+  });
+
+  syncKaigiEnabled();
+  update();   // 初期表示（設定復元後に一度変換しておく）
 </script>
