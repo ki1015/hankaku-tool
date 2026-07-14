@@ -240,8 +240,17 @@
   .btn-copy { background: var(--accent); color: #fff; }
   .btn-copy:hover { background: var(--accent-hover); }
   .btn-copy.copied { background: var(--ok); }
-  .btn-clear { background: transparent; color: var(--muted); padding: 7px 10px; }
-  .btn-clear:hover { color: var(--text); }
+  .btn-clear {
+    background: #fff;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 7px 16px;
+  }
+  .btn-clear:hover {
+    background: var(--soft);
+    color: var(--text);
+    border-color: var(--accent);
+  }
   .stats {
     text-align: center;
     margin-top: 22px;
