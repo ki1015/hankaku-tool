@@ -143,30 +143,25 @@
   }
   .stats b { color: var(--accent); }
 
-  /* オプション（機能のON/OFF） */
-  .options {
+  /* 出力枠ヘッダーの右側（改行オプション＋コピーボタン） */
+  .head-right {
     display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 18px;
+    align-items: center;
+    gap: 10px;
   }
-  .opt {
+  .opt-inline {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.9rem;
-    color: var(--text);
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--muted);
     cursor: pointer;
     user-select: none;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 14px;
+    white-space: nowrap;
   }
-  .opt input {
-    width: 16px;
-    height: 16px;
+  .opt-inline input {
+    width: 15px;
+    height: 15px;
     cursor: pointer;
     accent-color: var(--accent);
   }
@@ -185,13 +180,6 @@
     <p>文章を貼り付けると、全角の数字・アルファベットを自動で半角に直します</p>
   </header>
 
-  <div class="options">
-    <label class="opt">
-      <input type="checkbox" id="breakToggle">
-      「。」ごとに1行あけて改行する
-    </label>
-  </div>
-
   <div class="grid">
     <!-- 入力 -->
     <div class="panel">
@@ -206,7 +194,13 @@
     <div class="panel">
       <div class="panel-head">
         <span class="label">出力（半角に変換）</span>
-        <button class="btn-copy" id="copyBtn">コピー</button>
+        <div class="head-right">
+          <label class="opt-inline">
+            <input type="checkbox" id="breakToggle" checked>
+            「。」で改行
+          </label>
+          <button class="btn-copy" id="copyBtn">コピー</button>
+        </div>
       </div>
       <div id="output" class="output-box" data-placeholder="ここに変換後の文章が表示されます"></div>
     </div>
@@ -317,6 +311,20 @@
     copyBtn.textContent = 'コピー';
   }
 
+  // 変換結果をクリップボードへ自動コピーする（貼り付け時に使用）。
+  // ブラウザのセキュリティ制約で失敗することもあるため、その場合は静かに諦める
+  // （手動のコピーボタンはそのまま使えるので実用上は問題ない）。
+  async function autoCopy() {
+    if (!currentOutput) return;
+    try {
+      await navigator.clipboard.writeText(currentOutput);
+      copyBtn.classList.add('copied');
+      copyBtn.textContent = 'コピー済み';   // コピー保持状態を表示
+    } catch (e) {
+      /* 自動コピーが許可されない環境では何もしない */
+    }
+  }
+
   // コピー処理
   copyBtn.addEventListener('click', async function () {
     if (!currentOutput) return;
@@ -342,8 +350,22 @@
     update();
   });
 
-  // 貼り付け・入力・IME確定など、あらゆる変更に反応
-  input.addEventListener('input', update);
+  // 直前の入力が「貼り付け」だったかを覚えておく（貼り付け時は自動コピーまで行う）
+  let pastedNow = false;
+  input.addEventListener('paste', function () {
+    pastedNow = true;
+  });
+
+  // 貼り付け・入力・IME確定など、あらゆる変更に反応して変換する
+  input.addEventListener('input', function () {
+    update();
+    // 貼り付け直後なら、変換結果を自動でクリップボードにコピーする
+    // （このハンドラはユーザー操作由来なので、コピーが許可されやすい）
+    if (pastedNow) {
+      pastedNow = false;
+      autoCopy();
+    }
+  });
 
   // オプションのON/OFFを切り替えたら、その場で反映する
   breakToggle.addEventListener('change', update);
