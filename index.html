@@ -367,6 +367,24 @@
     }
   });
 
+  // 入力枠をクリックしたときの一括処理（ご要望のワークフロー）。
+  // 文字が入った状態でクリックすると：中身を消す → クリップボードの内容を取り込む
+  //  → 変換する → 結果を自動でクリップボードにコピーする。
+  // ※クリップボードの「読み取り」はブラウザの許可が必要で、Firefox 等では
+  //   動かないことがある（その場合はクリアのみになる）。
+  input.addEventListener('click', async function () {
+    if (input.value === '') return;   // 空クリックは通常どおり（何もしない）
+    input.value = '';                 // 1. まず中身を消す
+    try {
+      const clip = await navigator.clipboard.readText();  // 2. クリップボードを読み取る
+      if (clip) input.value = clip;
+    } catch (e) {
+      /* 読み取りが許可されない環境ではクリアのみで終わる */
+    }
+    update();                         // 3. 変換して
+    autoCopy();                       //    結果を自動でクリップボードにコピー
+  });
+
   // オプションのON/OFFを切り替えたら、その場で反映する
   breakToggle.addEventListener('change', update);
 </script>
