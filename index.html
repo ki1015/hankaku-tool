@@ -142,6 +142,34 @@
     min-height: 1.4em;
   }
   .stats b { color: var(--accent); }
+
+  /* オプション（機能のON/OFF） */
+  .options {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .opt {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+  }
+  .opt input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--accent);
+  }
   footer {
     text-align: center;
     margin-top: 40px;
@@ -223,6 +251,13 @@
     <p>文章を貼り付けると、全角の数字・アルファベットを自動で半角に直します</p>
   </header>
 
+  <div class="options">
+    <label class="opt">
+      <input type="checkbox" id="breakToggle">
+      「。」ごとに1行あけて改行する
+    </label>
+  </div>
+
   <div class="grid">
     <!-- 入力 -->
     <div class="panel">
@@ -286,6 +321,7 @@
   const copyBtn = document.getElementById('copyBtn');
   const clearBtn = document.getElementById('clearBtn');
   const stats   = document.getElementById('stats');
+  const breakToggle = document.getElementById('breakToggle');
 
   const FW = /[Ａ-Ｚａ-ｚ０-９]/;   // 全角の英数字（1文字）を判定する
 
@@ -321,10 +357,21 @@
     return m ? m.length : 0;
   }
 
+  // 「。」ごとに改行して1行あける（オプションがONのときだけ実行）。
+  // 「。」の直後にある既存の空白・改行はいったん吸収してから、改行＋空行に統一する。
+  function applyLineBreak(text) {
+    return text
+      .replace(/。[ \t　]*\n*/g, '。\n\n')  // 「。」の後を「改行＋空行」に揃える
+      .replace(/\n{3,}/g, '\n\n')            // 空行が増えすぎないようにする
+      .replace(/\n+$/, '');                  // 末尾の余分な空行は消す
+  }
+
   // 入力が変わるたびに自動で変換
   function update() {
     const src = input.value;
-    currentOutput = render(src);
+    // オプションがONなら「。」ごとに段落分けしてから変換する
+    const processed = breakToggle.checked ? applyLineBreak(src) : src;
+    currentOutput = render(processed);
 
     const n = countTargets(src);
     if (src.length === 0) {
@@ -369,4 +416,7 @@
 
   // 貼り付け・入力・IME確定など、あらゆる変更に反応
   input.addEventListener('input', update);
+
+  // オプションのON/OFFを切り替えたら、その場で反映する
+  breakToggle.addEventListener('change', update);
 </script>
