@@ -177,75 +177,9 @@
     font-size: 0.8rem;
   }
 
-  /* パスワード入力画面（簡易ロック） */
-  .gate {
-    position: fixed;
-    inset: 0;
-    background: var(--bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    z-index: 100;
-  }
-  .gate-box {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 32px 28px;
-    width: 100%;
-    max-width: 360px;
-    text-align: center;
-    box-shadow: 0 6px 24px rgba(30, 40, 60, 0.08);
-  }
-  .gate-box h2 {
-    margin: 0 0 6px;
-    font-size: 1.15rem;
-  }
-  .gate-box p.hint {
-    margin: 0 0 20px;
-    color: var(--muted);
-    font-size: 0.85rem;
-  }
-  .gate-box input {
-    width: 100%;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 11px 12px;
-    font-size: 1rem;
-    font-family: inherit;
-    outline: none;
-    margin-bottom: 12px;
-  }
-  .gate-box input:focus { border-color: var(--accent); }
-  .gate-box button {
-    width: 100%;
-    background: var(--accent);
-    color: #fff;
-    padding: 11px;
-    font-size: 0.95rem;
-  }
-  .gate-box button:hover { background: var(--accent-hover); }
-  .gate-error {
-    margin: 12px 0 0;
-    color: #d64545;
-    font-size: 0.85rem;
-    min-height: 1.2em;
-  }
 </style>
 
-<!-- パスワード入力画面（正しく入力すると本体が表示される） -->
-<div class="gate" id="gate">
-  <div class="gate-box">
-    <h2>パスワードを入力してください</h2>
-    <p class="hint">このツールを使うにはパスワードが必要です</p>
-    <input type="password" id="gatePass" placeholder="パスワード" autocomplete="off">
-    <button id="gateBtn">開く</button>
-    <p class="gate-error" id="gateError"></p>
-  </div>
-</div>
-
-<div class="wrap" id="app" style="display:none">
+<div class="wrap">
   <header>
     <h1>全角 → 半角 変換ツール</h1>
     <p>文章を貼り付けると、全角の数字・アルファベットを自動で半角に直します</p>
@@ -286,36 +220,6 @@
 </div>
 
 <script>
-  /* ===== 簡易パスワードロック ===== */
-  // 注意：これは「部外者がうっかり開かないための簡易的な鍵」です。
-  // パスワードはこのファイル内に書かれているため、本格的なセキュリティではありません。
-  const PASSWORD = 'kbc';
-
-  const gate      = document.getElementById('gate');
-  const gatePass  = document.getElementById('gatePass');
-  const gateBtn   = document.getElementById('gateBtn');
-  const gateError = document.getElementById('gateError');
-  const app       = document.getElementById('app');
-
-  function unlock() {
-    if (gatePass.value === PASSWORD) {
-      gate.style.display = 'none';   // パスワード画面を消す
-      app.style.display = '';        // 本体を表示
-      input.focus();
-    } else {
-      gateError.textContent = 'パスワードが違います';
-      gatePass.value = '';
-      gatePass.focus();
-    }
-  }
-
-  gateBtn.addEventListener('click', unlock);
-  gatePass.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') unlock();
-  });
-  gatePass.focus();
-
-  /* ===== 変換ツール本体 ===== */
   const input   = document.getElementById('input');
   const output  = document.getElementById('output');
   const copyBtn = document.getElementById('copyBtn');
@@ -358,12 +262,36 @@
   }
 
   // 「。」ごとに改行して1行あける（オプションがONのときだけ実行）。
-  // 「。」の直後にある既存の空白・改行はいったん吸収してから、改行＋空行に統一する。
+  // ただし「」の会話文の中にある「。」は、読みやすさを損なうので改行の対象にしない。
+  // カギ括弧の開き「でネストを深くし、閉じ」で戻す。ネストの外にある「。」だけ段落を分ける。
   function applyLineBreak(text) {
-    return text
-      .replace(/。[ \t　]*\n*/g, '。\n\n')  // 「。」の後を「改行＋空行」に揃える
-      .replace(/\n{3,}/g, '\n\n')            // 空行が増えすぎないようにする
-      .replace(/\n+$/, '');                  // 末尾の余分な空行は消す
+    let result = '';
+    let depth = 0;      // 「」のネストの深さ（>0 なら会話文の中）
+    let skipWs = false; // 段落を分けた直後の空白・改行を吸収するフラグ
+    for (const ch of text) {
+      // 「。」で改行を入れた直後に続く空白・改行は、重複を避けるため読み飛ばす
+      if (skipWs) {
+        if (ch === ' ' || ch === '\t' || ch === '　' || ch === '\n' || ch === '\r') {
+          continue;
+        }
+        skipWs = false;
+      }
+      if (ch === '「') {
+        depth++;
+        result += ch;
+      } else if (ch === '」') {
+        if (depth > 0) depth--;
+        result += ch;
+      } else if (ch === '。' && depth === 0) {
+        // 会話文の外の「。」→ ここで段落を分ける（改行して1行あける）
+        result += '。\n\n';
+        skipWs = true;
+      } else {
+        // 会話文の中の「。」もここに来る（そのまま維持して改行しない）
+        result += ch;
+      }
+    }
+    return result.replace(/\n+$/, ''); // 末尾の余分な空行は消す
   }
 
   // 入力が変わるたびに自動で変換
