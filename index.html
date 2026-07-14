@@ -1,0 +1,372 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全角→半角 変換ツール</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --panel: #ffffff;
+    --border: #d9dfea;
+    --accent: #3b6ef6;
+    --accent-hover: #2d5be0;
+    --text: #1c2432;
+    --muted: #6b7688;
+    --ok: #17a06a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  h1 {
+    font-size: 1.6rem;
+    margin: 0 0 6px;
+  }
+  header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 8px rgba(30, 40, 60, 0.04);
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    min-height: 34px;
+  }
+  .panel-head .label {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  textarea {
+    width: 100%;
+    min-height: 320px;
+    resize: vertical;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 1rem;
+    font-family: inherit;
+    line-height: 1.7;
+    color: var(--text);
+    background: #fbfcfe;
+    outline: none;
+  }
+  textarea:focus {
+    border-color: var(--accent);
+    background: #fff;
+  }
+  /* 出力枠（色付き表示ができるように textarea ではなく div にしている） */
+  .output-box {
+    width: 100%;
+    min-height: 320px;
+    max-height: 600px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--text);
+    background: #f7f9fc;
+    white-space: pre-wrap;   /* 改行と空白をそのまま表示 */
+    word-break: break-word;
+  }
+  /* 何も表示されていないときの案内文 */
+  .output-box:empty::before {
+    content: attr(data-placeholder);
+    color: var(--muted);
+  }
+  /* 全角→半角に変換した文字のハイライト */
+  .hit {
+    background: #ffe08a;
+    border-radius: 3px;
+    padding: 0 2px;
+    font-weight: 700;
+  }
+  button {
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 16px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .btn-copy {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-copy:hover { background: var(--accent-hover); }
+  .btn-copy.copied { background: var(--ok); }
+  .btn-clear {
+    background: transparent;
+    color: var(--muted);
+    padding: 7px 10px;
+  }
+  .btn-clear:hover { color: var(--text); }
+  .stats {
+    text-align: center;
+    margin-top: 22px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    min-height: 1.4em;
+  }
+  .stats b { color: var(--accent); }
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  /* パスワード入力画面（簡易ロック） */
+  .gate {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 100;
+  }
+  .gate-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+    box-shadow: 0 6px 24px rgba(30, 40, 60, 0.08);
+  }
+  .gate-box h2 {
+    margin: 0 0 6px;
+    font-size: 1.15rem;
+  }
+  .gate-box p.hint {
+    margin: 0 0 20px;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .gate-box input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    outline: none;
+    margin-bottom: 12px;
+  }
+  .gate-box input:focus { border-color: var(--accent); }
+  .gate-box button {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    padding: 11px;
+    font-size: 0.95rem;
+  }
+  .gate-box button:hover { background: var(--accent-hover); }
+  .gate-error {
+    margin: 12px 0 0;
+    color: #d64545;
+    font-size: 0.85rem;
+    min-height: 1.2em;
+  }
+</style>
+
+<!-- パスワード入力画面（正しく入力すると本体が表示される） -->
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <h2>パスワードを入力してください</h2>
+    <p class="hint">このツールを使うにはパスワードが必要です</p>
+    <input type="password" id="gatePass" placeholder="パスワード" autocomplete="off">
+    <button id="gateBtn">開く</button>
+    <p class="gate-error" id="gateError"></p>
+  </div>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+  <header>
+    <h1>全角 → 半角 変換ツール</h1>
+    <p>文章を貼り付けると、全角の数字・アルファベットを自動で半角に直します</p>
+  </header>
+
+  <div class="grid">
+    <!-- 入力 -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">入力</span>
+        <button class="btn-clear" id="clearBtn">クリア</button>
+      </div>
+      <textarea id="input" placeholder="ここに文章を貼り付けてください&#10;例）ＡＢＣ１２３ → ABC123"></textarea>
+    </div>
+
+    <!-- 出力 -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">出力（半角に変換）</span>
+        <button class="btn-copy" id="copyBtn">コピー</button>
+      </div>
+      <div id="output" class="output-box" data-placeholder="ここに変換後の文章が表示されます"></div>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <footer>
+    このツールはすべてブラウザ内で動作します。入力した文章が外部に送信されることはありません。
+  </footer>
+</div>
+
+<script>
+  /* ===== 簡易パスワードロック ===== */
+  // 注意：これは「部外者がうっかり開かないための簡易的な鍵」です。
+  // パスワードはこのファイル内に書かれているため、本格的なセキュリティではありません。
+  const PASSWORD = 'kbc';
+
+  const gate      = document.getElementById('gate');
+  const gatePass  = document.getElementById('gatePass');
+  const gateBtn   = document.getElementById('gateBtn');
+  const gateError = document.getElementById('gateError');
+  const app       = document.getElementById('app');
+
+  function unlock() {
+    if (gatePass.value === PASSWORD) {
+      gate.style.display = 'none';   // パスワード画面を消す
+      app.style.display = '';        // 本体を表示
+      input.focus();
+    } else {
+      gateError.textContent = 'パスワードが違います';
+      gatePass.value = '';
+      gatePass.focus();
+    }
+  }
+
+  gateBtn.addEventListener('click', unlock);
+  gatePass.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') unlock();
+  });
+  gatePass.focus();
+
+  /* ===== 変換ツール本体 ===== */
+  const input   = document.getElementById('input');
+  const output  = document.getElementById('output');
+  const copyBtn = document.getElementById('copyBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const stats   = document.getElementById('stats');
+
+  const FW = /[Ａ-Ｚａ-ｚ０-９]/;   // 全角の英数字（1文字）を判定する
+
+  // コピー用に、色なしのプレーンな変換結果を保持しておく
+  let currentOutput = '';
+
+  // 出力枠を組み立てる。
+  // 全角の英数字は半角に変換したうえで <span class="hit"> で囲んでハイライトし、
+  // それ以外の文字（日本語・記号・改行など）はそのまま表示する。
+  // 全角文字は半角文字よりコードポイントが 0xFEE0 だけ大きいので、その分を引く。
+  function render(src) {
+    output.textContent = '';   // いったん中身を空にする
+    let plain = '';
+    for (const ch of src) {
+      if (FW.test(ch)) {
+        const half = String.fromCharCode(ch.charCodeAt(0) - 0xFEE0);
+        const span = document.createElement('span');
+        span.className = 'hit';
+        span.textContent = half;
+        output.appendChild(span);
+        plain += half;
+      } else {
+        output.appendChild(document.createTextNode(ch));
+        plain += ch;
+      }
+    }
+    return plain;   // 色なしのプレーンテキスト（コピー用）
+  }
+
+  // 変換対象になった文字数を数える
+  function countTargets(str) {
+    const m = str.match(/[Ａ-Ｚａ-ｚ０-９]/g);
+    return m ? m.length : 0;
+  }
+
+  // 入力が変わるたびに自動で変換
+  function update() {
+    const src = input.value;
+    currentOutput = render(src);
+
+    const n = countTargets(src);
+    if (src.length === 0) {
+      stats.textContent = '';
+    } else if (n === 0) {
+      stats.textContent = '全角の英数字は見つかりませんでした';
+    } else {
+      stats.innerHTML = '全角の英数字を <b>' + n + '</b> 文字、半角に変換しました';
+    }
+    resetCopyLabel();
+  }
+
+  function resetCopyLabel() {
+    copyBtn.classList.remove('copied');
+    copyBtn.textContent = 'コピー';
+  }
+
+  // コピー処理
+  copyBtn.addEventListener('click', async function () {
+    if (!currentOutput) return;
+    try {
+      await navigator.clipboard.writeText(currentOutput);
+    } catch (e) {
+      // clipboard API が使えない環境（file:// の古いブラウザ等）へのフォールバック
+      const tmp = document.createElement('textarea');
+      tmp.value = currentOutput;
+      document.body.appendChild(tmp);
+      tmp.select();
+      document.execCommand('copy');
+      document.body.removeChild(tmp);
+    }
+    copyBtn.classList.add('copied');
+    copyBtn.textContent = 'コピーしました';
+    setTimeout(resetCopyLabel, 1500);
+  });
+
+  clearBtn.addEventListener('click', function () {
+    input.value = '';
+    input.focus();
+    update();
+  });
+
+  // 貼り付け・入力・IME確定など、あらゆる変更に反応
+  input.addEventListener('input', update);
+</script>
