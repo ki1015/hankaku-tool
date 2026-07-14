@@ -280,8 +280,30 @@
     </div>
   </details>
 
+  <div class="grid">
+    <!-- 入力 -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">入力</span>
+        <button class="btn-clear" id="clearBtn">クリア</button>
+      </div>
+      <textarea id="input" placeholder="ここに文章を貼り付けてください&#10;例）ＡＢＣ１２３ → ABC123"></textarea>
+    </div>
+
+    <!-- 出力 -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">出力（半角に変換）</span>
+        <button class="btn-copy" id="copyBtn">コピー</button>
+      </div>
+      <div id="output" class="output-box" data-placeholder="ここに変換後の文章が表示されます"></div>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
   <!-- 設定パネル（機能のオン・オフ。設定はこのブラウザに保存されます） -->
-  <details class="box" open>
+  <details class="box">
     <summary>設定 ── 機能のオン・オフ（このPCに保存されます）</summary>
     <div class="box-inner">
       <div class="setting-list">
@@ -321,28 +343,6 @@
       </div>
     </div>
   </details>
-
-  <div class="grid">
-    <!-- 入力 -->
-    <div class="panel">
-      <div class="panel-head">
-        <span class="label">入力</span>
-        <button class="btn-clear" id="clearBtn">クリア</button>
-      </div>
-      <textarea id="input" placeholder="ここに文章を貼り付けてください&#10;例）ＡＢＣ１２３ → ABC123"></textarea>
-    </div>
-
-    <!-- 出力 -->
-    <div class="panel">
-      <div class="panel-head">
-        <span class="label">出力（半角に変換）</span>
-        <button class="btn-copy" id="copyBtn">コピー</button>
-      </div>
-      <div id="output" class="output-box" data-placeholder="ここに変換後の文章が表示されます"></div>
-    </div>
-  </div>
-
-  <div class="stats" id="stats"></div>
 
   <footer>
     このツールはすべてブラウザ内で動作します。入力した文章が外部に送信されることはありません。
