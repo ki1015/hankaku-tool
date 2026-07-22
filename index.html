@@ -317,6 +317,14 @@
     <div class="box-inner">
       <div class="setting-list">
 
+        <label class="setting" id="row-optJoinLines">
+          <input type="checkbox" id="optJoinLines">
+          <span class="setting-body">
+            <span class="setting-title">行をつなげる</span>
+            <span class="setting-desc">空行（段落の区切り）はそのまま残し、それ以外の改行はつなげて1つの文章にします。行ごとに短く区切られた原稿を、読みやすい段落にまとめ直すのに使います</span>
+          </span>
+        </label>
+
         <label class="setting" id="row-optLineBreak">
           <input type="checkbox" id="optLineBreak">
           <span class="setting-body">
@@ -330,6 +338,22 @@
           <span class="setting-body">
             <span class="setting-title">会話文「」の中は改行しない</span>
             <span class="setting-desc">例：<code>「行きます。すぐ戻ります。」</code> の中の「。」では改行しません（上の設定がONのときだけ働きます）</span>
+          </span>
+        </label>
+
+        <label class="setting sub" id="row-optBreakAfterKaigi">
+          <input type="checkbox" id="optBreakAfterKaigi">
+          <span class="setting-body">
+            <span class="setting-title">「」の直後で改行する（ON活かし部分の会話文を見やすくする）</span>
+            <span class="setting-desc">例：<code>「言うことを聞かないから殴った。」と彼は言った。</code> → 「」が閉じた直後で改行します（上の設定がONのときだけ働きます）</span>
+          </span>
+        </label>
+
+        <label class="setting" id="row-optCompactSpaces">
+          <input type="checkbox" id="optCompactSpaces">
+          <span class="setting-body">
+            <span class="setting-title">スペースを詰める</span>
+            <span class="setting-desc">文中・行頭にある全角・半角スペースを削除し、3行以上続く空行は1行にまとめます。ニュース原稿など、読みやすさのために入っているスペースを取り除くのに便利です。※英数字と英数字の間のスペース（例：<code>ABC 123</code>）は残します</span>
           </span>
         </label>
 
@@ -373,16 +397,22 @@
 
   // 設定の初期値（保存がまだ無い人に適用される既定値）
   const DEFAULTS = {
+    joinLines: true,        // 行をつなげる
     lineBreak: true,        // 「。」で段落を分ける
     excludeKaigi: true,     // 会話文「」の中は改行しない
+    breakAfterKaigi: true,  // 「」の直後で改行する
+    compactSpaces: false,   // スペースを詰める（既定はOFF。英数字間のスペースは常に保持）
     autoCopyOnPaste: true,  // 貼り付けたら自動でコピー
     clickFlow: true         // 入力欄クリックで丸ごと入れ替え（初期はON）
   };
 
   // 設定キーと、対応するチェックボックスのID
   const OPTIONS = [
+    { key: 'joinLines',       id: 'optJoinLines' },
     { key: 'lineBreak',       id: 'optLineBreak' },
     { key: 'excludeKaigi',    id: 'optExcludeKaigi' },
+    { key: 'breakAfterKaigi', id: 'optBreakAfterKaigi' },
+    { key: 'compactSpaces',   id: 'optCompactSpaces' },
     { key: 'autoCopyOnPaste', id: 'optAutoCopy' },
     { key: 'clickFlow',       id: 'optClickFlow' }
   ];
@@ -438,26 +468,38 @@
 
   // 「。」ごとに改行して1行あける。excludeKaigi が true のときは、
   // 「」の会話文の中にある「。」は改行の対象にしない。
-  function applyLineBreak(text, excludeKaigi) {
+  // breakAfterKaigi が true のときは、「」が閉じた直後で改行する。
+  function applyLineBreak(text, excludeKaigi, breakAfterKaigi) {
     let result = '';
     let depth = 0;      // 「」のネストの深さ（>0 なら会話文の中）
     let skipWs = false; // 段落を分けた直後の空白・改行を吸収するフラグ
+    const trackKaigi = excludeKaigi || breakAfterKaigi; // 「」の追跡が必要か
     for (const ch of text) {
+      let justBroke = false; // 直前の文字で段落分けしたばかりか（二重改行の防止）
       if (skipWs) {
         if (ch === ' ' || ch === '\t' || ch === '　' || ch === '\n' || ch === '\r') {
           continue;
         }
         skipWs = false;
+        justBroke = true;
       }
-      if (excludeKaigi && ch === '「') {
+      if (trackKaigi && ch === '「') {
         depth++;
         result += ch;
-      } else if (excludeKaigi && ch === '」') {
+      } else if (trackKaigi && ch === '」') {
         if (depth > 0) depth--;
         result += ch;
-      } else if (ch === '。' && depth === 0) {
-        result += '。\n\n';
-        skipWs = true;
+        if (breakAfterKaigi && depth === 0 && !justBroke) {
+          result += '\n\n';
+          skipWs = true;
+        }
+      } else if (ch === '。' && (!excludeKaigi || depth === 0)) {
+        if (justBroke) {
+          result += '。';
+        } else {
+          result += '。\n\n';
+          skipWs = true;
+        }
       } else {
         result += ch;
       }
@@ -465,11 +507,42 @@
     return result.replace(/\n+$/, '');
   }
 
+  // 英数字（全角・半角）1文字かどうかを判定する
+  const ALNUM = /[A-Za-z0-9Ａ-Ｚａ-ｚ０-９]/;
+  function isAlnumChar(ch) {
+    return !!ch && ALNUM.test(ch);
+  }
+
+  // 文中・行頭の全角・半角スペースを削除し、3行以上続く空行は1行にまとめる。
+  // ただし英数字と英数字の間のスペース（単語の区切り）は残す。
+  function compactSpaces(text) {
+    const stripped = text.replace(/[ 　]/g, function (match, offset, str) {
+      return (isAlnumChar(str[offset - 1]) && isAlnumChar(str[offset + 1])) ? match : '';
+    });
+    return stripped.replace(/\n{3,}/g, '\n\n');
+  }
+
+  // 空行（段落の区切り）はそのまま残し、それ以外の改行をつなげて1つの文章にする。
+  // 各行の前後にある全角・半角スペースは、つなげる際に取り除く。
+  function joinLines(text) {
+    return text
+      .split(/\n{2,}/)
+      .map(function (block) {
+        return block
+          .split('\n')
+          .map(function (line) { return line.replace(/^[ 　]+|[ 　]+$/g, ''); })
+          .join('');
+      })
+      .join('\n\n');
+  }
+
   /* ===== 変換の実行（入力が変わるたびに呼ばれる） ===== */
   function update() {
     const src = input.value;
-    // 設定に応じて「。」の段落分けを適用してから変換する
-    const processed = opts.lineBreak ? applyLineBreak(src, opts.excludeKaigi) : src;
+    // 設定に応じてスペース詰め・行つなげ・「。」の段落分けを順に適用してから変換する
+    let processed = opts.compactSpaces ? compactSpaces(src) : src;
+    processed = opts.joinLines ? joinLines(processed) : processed;
+    processed = opts.lineBreak ? applyLineBreak(processed, opts.excludeKaigi, opts.breakAfterKaigi) : processed;
     currentOutput = render(processed);
 
     const n = countTargets(src);
@@ -555,12 +628,14 @@
   });
 
   /* ===== 設定UIの初期化（保存値をチェックボックスへ反映＋変更を保存） ===== */
-  // 会話文除外は「段落を分ける」がONのときだけ意味を持つので、OFF時は無効表示にする
+  // 会話文除外／「」直後の改行は「段落を分ける」がONのときだけ意味を持つので、OFF時は無効表示にする
   function syncKaigiEnabled() {
-    const el = document.getElementById('optExcludeKaigi');
-    const row = document.getElementById('row-optExcludeKaigi');
-    el.disabled = !opts.lineBreak;
-    row.classList.toggle('disabled', !opts.lineBreak);
+    ['optExcludeKaigi', 'optBreakAfterKaigi'].forEach(function (id) {
+      const el = document.getElementById(id);
+      const row = document.getElementById('row-' + id);
+      el.disabled = !opts.lineBreak;
+      row.classList.toggle('disabled', !opts.lineBreak);
+    });
   }
 
   OPTIONS.forEach(function (o) {
